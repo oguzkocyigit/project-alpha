@@ -1,26 +1,142 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #08090a;
+  --surface: #141517;
+  --surface-raised: #1b1c1f;
+  --surface-border: #2a2b2f;
+  --foreground: #f4f4f3;
+  --muted: #8b8d93;
+  --accent: #e0332f;
+  --accent-soft: #e0332f22;
+  --accent-amber: #f2a93c;
+  --accent-green: #4ea968;
+  --accent-steel: #7c8794;
+
+  /* Military / tactical theme — used only by the client-facing app (app/p/[slug]),
+     kept separate from the admin's --accent etc. so the two surfaces can
+     have entirely different personalities. */
+  --mil-bg: #0b0d09;
+  --mil-surface: #14170f;
+  --mil-surface-raised: #1b1f14;
+  --mil-border: #333a26;
+  --mil-ink: #e9e6d6;
+  --mil-muted: #8d9278;
+  --mil-brass: #c2a35f;
+  --mil-danger: #a13a2f;
+  --mil-sage: #6f9585;
+  --mil-olive: #7c8a4a;
+  --mil-steel: #7c8794;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-border: var(--surface-border);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-green: var(--accent-green);
+  --color-accent-steel: var(--accent-steel);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-mil-bg: var(--mil-bg);
+  --color-mil-surface: var(--mil-surface);
+  --color-mil-surface-raised: var(--mil-surface-raised);
+  --color-mil-border: var(--mil-border);
+  --color-mil-ink: var(--mil-ink);
+  --color-mil-muted: var(--mil-muted);
+  --color-mil-brass: var(--mil-brass);
+  --color-mil-danger: var(--mil-danger);
+  --color-mil-sage: var(--mil-sage);
+  --color-mil-olive: var(--mil-olive);
+  --color-mil-steel: var(--mil-steel);
+
+  --font-heading: var(--font-oswald);
+  --font-sans: var(--font-barlow);
+  --font-mono: var(--font-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Subtle atmosphere for the client-facing app shell: a soft radial glow
+   from the top plus a fine grain texture, so the dark theme reads as
+   "designed" rather than a flat #000 fill. */
+.app-atmosphere {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-atmosphere::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(60% 40% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    var(--background);
+}
+
+.app-atmosphere::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Tactical/HUD atmosphere for the client-facing app: a dim olive glow,
+   a fine grain, and a very faint horizontal scanline pass. */
+.mil-atmosphere {
+  position: relative;
+  isolation: isolate;
+  background: var(--mil-bg);
+  color: var(--mil-ink);
+}
+
+.mil-atmosphere::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(70% 45% at 50% 0%, color-mix(in srgb, var(--mil-olive) 16%, transparent), transparent 70%),
+    var(--mil-bg);
+}
+
+.mil-atmosphere::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}
+
+.mil-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, black 25%, transparent) 0px,
+    color-mix(in srgb, black 25%, transparent) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.25;
+}
+

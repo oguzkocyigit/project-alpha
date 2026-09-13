@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  SUPPLEMENT
+  VITAMIN
+  PEPTIDE
+  ANABOLIC
+}
+
+// Coach's reusable product archive — not tied to any client. Used to quickly
+// prefill a ProtocolItem when assigning a product to someone's schedule.
+model LibraryProduct {
+  id               String   @id @default(cuid())
+  category         Category
+  name             String
+  content          String // usage notes, rationale, warnings — free text
+  defaultDosage    String?
+  defaultTimeOfDay String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Client {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  protocolItems ProtocolItem[]
+  workoutDays   WorkoutDay[]
+}
+
+model ProtocolItem {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  category    Category
+  productName String
+  dosage      String
+  daysOfWeek  String[]
+  timeOfDay   String
+  notes       String?
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clientId])
+}
+
+// One row per weekday (MON..SUN) per client — the day's training session.
+// No row for a given day = that day has no assigned workout (shown to the
+// client as a rest day), so the coach only creates rows for days with a plan.
+model WorkoutDay {
+  id        String            @id @default(cuid())
+  clientId  String
+  client    Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  dayOfWeek String // MON..SUN
+  title     String // e.g. "Göğüs & Triceps"
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  exercises WorkoutExercise[]
+
+  @@unique([clientId, dayOfWeek])
+  @@index([clientId])
+}
+
+enum ExerciseType {
+  STRENGTH
+  CARDIO
+}
+
+model WorkoutExercise {
+  id              String       @id @default(cuid())
+  workoutDayId    String
+  workoutDay      WorkoutDay   @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  type            ExerciseType @default(STRENGTH)
+  name            String
+  // STRENGTH fields
+  sets            Int?
+  reps            String? // free text: "8-12", "AMRAP"...
+  // CARDIO fields
+  durationMinutes Int?
+  intensity       String? // e.g. "Zone 2", "8 km/h, %2 eğim"
+  restNote        String? // e.g. "60sn", "2dk" — applies to either type
+  notes           String?
+  sortOrder       Int          @default(0)
+
+  @@index([workoutDayId])
+}
