@@ -19,6 +19,7 @@ export default function ProtocolCard({
   daysOfWeek,
   taken,
   onToggleTaken,
+  showCategoryBadge = true,
 }: {
   item: ProtocolCardItem;
   /** When given, renders a compact day-of-week chip row (used outside Day view). */
@@ -26,6 +27,8 @@ export default function ProtocolCard({
   /** When given (with onToggleTaken), renders a "mark as taken" affordance. */
   taken?: boolean;
   onToggleTaken?: () => void;
+  /** Set to false when the card already sits under a category section header. */
+  showCategoryBadge?: boolean;
 }) {
   const meta = MIL_CATEGORY_META[item.category];
   const Icon = CATEGORY_ICON[item.category];
@@ -74,7 +77,7 @@ export default function ProtocolCard({
           <span className="font-mono font-semibold text-mil-ink/90">{item.dosage}</span>
           <span className="text-mil-border">•</span>
           <span>{item.timeOfDay}</span>
-          {!daysOfWeek && (
+          {!daysOfWeek && showCategoryBadge && (
             <>
               <span className="text-mil-border">•</span>
               <CategoryBadge category={item.category} />

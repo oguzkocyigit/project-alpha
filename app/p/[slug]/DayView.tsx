@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { DayCode } from "@/lib/constants";
+import { CATEGORY_ORDER, type DayCode } from "@/lib/constants";
+import { MIL_CATEGORY_META } from "@/lib/mil-category-meta";
+import { CATEGORY_ICON } from "@/lib/category-icon";
 import { getTodayDateKey, getTodayDayCode } from "@/lib/date";
 import { useTakenItems } from "@/lib/use-taken";
 import DayPills from "./DayPills";
@@ -21,6 +23,10 @@ export default function DayView({
   const isToday = selectedDay === TODAY_CODE;
 
   const itemsForDay = items.filter((item) => item.daysOfWeek.includes(selectedDay));
+  const groupedForDay = CATEGORY_ORDER.map((category) => ({
+    category,
+    items: itemsForDay.filter((item) => item.category === category),
+  })).filter((group) => group.items.length > 0);
   const takenCount = isToday
     ? itemsForDay.filter((item) => taken.has(item.id)).length
     : 0;
@@ -55,8 +61,8 @@ export default function DayView({
         </div>
       )}
 
-      <div className="mt-4 space-y-2.5">
-        {itemsForDay.length === 0 ? (
+      <div className="mt-4 space-y-5">
+        {groupedForDay.length === 0 ? (
           <div className="rounded-sm border border-dashed border-mil-border py-14 text-center">
             <p className="font-heading text-lg uppercase tracking-wide text-mil-muted">
               İstirahat Günü
@@ -64,14 +70,35 @@ export default function DayView({
             <p className="mt-1 text-sm text-mil-muted">Bugün için planlanmış bir şey yok.</p>
           </div>
         ) : (
-          itemsForDay.map((item) => (
-            <ProtocolCard
-              key={item.id}
-              item={item}
-              taken={isToday ? taken.has(item.id) : undefined}
-              onToggleTaken={isToday ? () => toggle(item.id) : undefined}
-            />
-          ))
+          groupedForDay.map(({ category, items: categoryItems }) => {
+            const meta = MIL_CATEGORY_META[category];
+            const Icon = CATEGORY_ICON[category];
+            return (
+              <section key={category}>
+                <div className="mb-2 flex items-center gap-2 border-b border-mil-border pb-1.5">
+                  <div
+                    className={"flex h-6 w-6 items-center justify-center rounded-sm border " + meta.iconClass}
+                  >
+                    <Icon size={13} strokeWidth={2.25} />
+                  </div>
+                  <h2 className="font-heading text-sm font-semibold uppercase tracking-wide">
+                    {meta.label}
+                  </h2>
+                </div>
+                <div className="space-y-2.5">
+                  {categoryItems.map((item) => (
+                    <ProtocolCard
+                      key={item.id}
+                      item={item}
+                      showCategoryBadge={false}
+                      taken={isToday ? taken.has(item.id) : undefined}
+                      onToggleTaken={isToday ? () => toggle(item.id) : undefined}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })
         )}
       </div>
     </div>

@@ -40,6 +40,11 @@ export default async function ProtocolPage() {
         </Link>
       </div>
 
+      <p className="-mt-6 text-xs text-muted">
+        Sıralamayı değiştirmek için satırları sürükleyip bırakabilirsiniz — bu sıra, müşteri
+        sayfasında o gün için gösterilen ürün sırasını da belirler.
+      </p>
+
       {grouped.map(({ category, items }) => (
         <section key={category}>
           <h2
@@ -51,7 +56,7 @@ export default async function ProtocolPage() {
           {items.length === 0 ? (
             <p className="text-sm text-muted">Bu kategoride ürün yok.</p>
           ) : (
-            <ItemList items={items} />
+            <ItemList items={items} category={category} />
           )}
         </section>
       ))}
