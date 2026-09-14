@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DAYS_OF_WEEK } from "@/lib/constants";
+import { DAYS_OF_WEEK, TIME_OF_DAY_OPTIONS } from "@/lib/constants";
+
+const CUSTOM_TIME_VALUE = "__custom__";
 import type { ItemFormState } from "./actions";
 import type { Category } from "@prisma/client";
 
@@ -65,8 +67,26 @@ export default function ItemForm({
   const categoryRef = useRef<HTMLSelectElement>(null);
   const productNameRef = useRef<HTMLInputElement>(null);
   const dosageRef = useRef<HTMLInputElement>(null);
-  const timeOfDayRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  function isPresetTime(value: string) {
+    return value === "" || (TIME_OF_DAY_OPTIONS as readonly string[]).includes(value);
+  }
+
+  // The library item preselected via ?library=<id> (if any) determines the
+  // initial time value too — computed once as lazy initial state rather than
+  // in a mount effect, so no effect ever needs to call setState here.
+  const preselectedProduct = libraryProducts.find((p) => p.id === initialLibraryId);
+  const initialTime = preselectedProduct?.defaultTimeOfDay ?? initialValues.timeOfDay;
+  const [timeMode, setTimeMode] = useState<"preset" | "custom">(() =>
+    isPresetTime(initialTime) ? "preset" : "custom",
+  );
+  const [timeValue, setTimeValue] = useState(initialTime);
+
+  function applyTimeOfDay(value: string) {
+    setTimeMode(isPresetTime(value) ? "preset" : "custom");
+    setTimeValue(value);
+  }
 
   function fillFromLibrary(id: string) {
     const product = libraryProducts.find((p) => p.id === id);
@@ -74,12 +94,19 @@ export default function ItemForm({
     if (categoryRef.current) categoryRef.current.value = product.category;
     if (productNameRef.current) productNameRef.current.value = product.name;
     if (dosageRef.current) dosageRef.current.value = product.defaultDosage ?? "";
-    if (timeOfDayRef.current) timeOfDayRef.current.value = product.defaultTimeOfDay ?? "";
+    applyTimeOfDay(product.defaultTimeOfDay ?? "");
     if (notesRef.current) notesRef.current.value = product.content;
   }
 
   useEffect(() => {
-    if (initialLibraryId) fillFromLibrary(initialLibraryId);
+    // Only the ref-backed (uncontrolled) fields need this — timeOfDay's
+    // initial value is already handled above via useState.
+    if (preselectedProduct) {
+      if (categoryRef.current) categoryRef.current.value = preselectedProduct.category;
+      if (productNameRef.current) productNameRef.current.value = preselectedProduct.name;
+      if (dosageRef.current) dosageRef.current.value = preselectedProduct.defaultDosage ?? "";
+      if (notesRef.current) notesRef.current.value = preselectedProduct.content;
+    }
     // Only meant to run once, applying the preselected library item on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -171,14 +198,53 @@ export default function ItemForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm text-muted mb-1.5">Zaman</label>
-          <input
-            ref={timeOfDayRef}
-            name="timeOfDay"
-            defaultValue={initialValues.timeOfDay}
-            required
-            placeholder="Sabah / Akşam / 08:00"
-            className="w-full rounded-lg border border-surface-border bg-surface px-3.5 py-2.5 text-foreground outline-none focus:border-accent"
-          />
+          {timeMode === "preset" ? (
+            <select
+              name="timeOfDay"
+              value={timeValue}
+              required
+              onChange={(e) => {
+                if (e.target.value === CUSTOM_TIME_VALUE) {
+                  setTimeMode("custom");
+                  setTimeValue("");
+                } else {
+                  setTimeValue(e.target.value);
+                }
+              }}
+              className="w-full rounded-lg border border-surface-border bg-surface px-3.5 py-2.5 text-foreground outline-none focus:border-accent"
+            >
+              <option value="" disabled>
+                Seçiniz
+              </option>
+              {TIME_OF_DAY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+              <option value={CUSTOM_TIME_VALUE}>Özel…</option>
+            </select>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                name="timeOfDay"
+                value={timeValue}
+                onChange={(e) => setTimeValue(e.target.value)}
+                required
+                placeholder="Sabah / Akşam / 08:00"
+                className="w-full rounded-lg border border-surface-border bg-surface px-3.5 py-2.5 text-foreground outline-none focus:border-accent"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setTimeMode("preset");
+                  setTimeValue("");
+                }}
+                className="shrink-0 rounded-lg border border-surface-border px-3 text-xs text-muted hover:text-foreground"
+              >
+                Listeden seç
+              </button>
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-sm text-muted mb-1.5">Sıra</label>

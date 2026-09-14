@@ -52,3 +52,13 @@ export const CATEGORY_ORDER: Category[] = [
   "VITAMIN",
   "SUPPLEMENT",
 ];
+
+// Kept in chronological (daily) order — this drives both the admin dropdown
+// and the grouping order on the client-facing day view.
+export const TIME_OF_DAY_OPTIONS = [
+  "Kahvaltıdan sonra",
+  "Öğlen Öğün öncesi",
+  "Spordan önce",
+  "Spordan sonra",
+  "Uykudan önce",
+] as const;
